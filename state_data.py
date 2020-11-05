@@ -4,6 +4,7 @@
 import requests
 from bs4 import BeautifulSoup
 import json
+import fire
 
 links = [
     {"name": "Alabama", "route": "/elections/election-results/alabama-2020"},
@@ -62,31 +63,34 @@ links = [
     {"name": "Wyoming", "route": "/elections/election-results/wyoming-2020"},
 ]
 
-output_file = "all_data_output.csv"
-# with open(output_file, "w") as out_f:
-#     out_f.write("county, ")
-for state_dict in links:
-    state_name = state_dict["name"]
-    url = f"https://www.washingtonpost.com/{state_dict['route']}"
-    html_text = requests.get(url).text
-    soup = BeautifulSoup(html_text, "html.parser")
-    state_data = json.loads(soup.find(id="__NEXT_DATA__").text)
-    precinct_subunits = {}
-    presidential_race_id = None
-    county_votes = {}
-    candidate_map = {}
-    for race in state_data["props"]["pageProps"]["config"]["races"]:
-        if "President general" in race["name"]:
-            presidential_race_id = race["id"]
-            candidate_map = {x["id"]: x for x in race["candidates"]}
-            precinct_subunits = {x["id"]: {"name": x["name"]} for x in race["map"]["subunits"]}
-    for subunit_id, subunit in state_data["props"]["pageProps"]["results"][presidential_race_id][
-        "subunits"
-    ].items():
-        counts_by_candidate = {}
-        for candidate_id, count in subunit["counts"].items():
-            counts_by_candidate[candidate_map[candidate_id]["name"]] = count
-            county_votes[precinct_subunits[subunit_id]["name"]] = counts_by_candidate
-    print(county_votes)
-    break
 
+def main(limit: int = 1):
+    for index, state_dict in enumerate(links):
+        state_name = state_dict["name"]
+        url = f"https://www.washingtonpost.com/{state_dict['route']}"
+        html_text = requests.get(url).text
+        soup = BeautifulSoup(html_text, "html.parser")
+        state_data = json.loads(soup.find(id="__NEXT_DATA__").text)
+        precinct_subunits = {}
+        presidential_race_id = None
+        county_votes = {}
+        candidate_map = {}
+        for race in state_data["props"]["pageProps"]["config"]["races"]:
+            if "President general" in race["name"]:
+                presidential_race_id = race["id"]
+                candidate_map = {x["id"]: x for x in race["candidates"]}
+                precinct_subunits = {x["id"]: {"name": x["name"]} for x in race["map"]["subunits"]}
+        for subunit_id, subunit in state_data["props"]["pageProps"]["results"][
+            presidential_race_id
+        ]["subunits"].items():
+            counts_by_candidate = {}
+            for candidate_id, count in subunit["counts"].items():
+                counts_by_candidate[candidate_map[candidate_id]["name"]] = count
+                county_votes[precinct_subunits[subunit_id]["name"]] = counts_by_candidate
+        print(county_votes)
+        if index + 1 >= limit:
+            return
+
+
+if __name__ == "__main__":
+    fire.Fire(main)

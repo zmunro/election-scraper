@@ -1,0 +1,22 @@
+props -> page_props -> config -> races
+    find race where name like "President general"
+    get the id (ex: "2020-11-03_TX_G_P")
+    candidate id map under 'candidates':
+        {
+            "incumbent": false,
+            "last": "Write-ins",
+            "party": "WRI",
+            "id": "21303",
+            "name": "Write-ins",
+            "totalVotes": 9222,
+            "order": 1000
+        },
+    -> map -> subunits
+        grab "id" and "name" from dicts for precinct names
+
+
+props -> pageProps -> results ['2020-11-03_TX_G_P'] -> subunits
+    go through key/values
+    grab "id" to get precinct id
+    grab "counts" dict mapping candidate id to votes
+
