@@ -61,10 +61,12 @@ links = [
 ]
 
 
-def main(limit: int = 1):
+def main(limit: int = None):
+    parsed_state_data = {}
     for index, state_dict in enumerate(links):
         state_name = state_dict["name"]
-        url = f"https://www.washingtonpost.com/{state_dict['route']}"
+        print(f"Parsing {state_name}... ({round((index + 1)/len(links) * 100)}%)")
+        url = f"https://www.washingtonpost.com{state_dict['route']}"
         html_text = requests.get(url).text
         soup = BeautifulSoup(html_text, "html.parser")
         state_data = json.loads(soup.find(id="__NEXT_DATA__").text)
@@ -77,16 +79,20 @@ def main(limit: int = 1):
                 presidential_race_id = race["id"]
                 candidate_map = {x["id"]: x for x in race["candidates"]}
                 precinct_subunits = {x["id"]: {"name": x["name"]} for x in race["map"]["subunits"]}
-        for subunit_id, subunit in state_data["props"]["pageProps"]["results"][
-            presidential_race_id
-        ]["subunits"].items():
+        subunits = state_data["props"]["pageProps"]["results"][presidential_race_id]["subunits"]
+        for subunit_id, subunit in subunits.items():
             counts_by_candidate = {}
             for candidate_id, count in subunit["counts"].items():
-                counts_by_candidate[candidate_map[candidate_id]["name"]] = count
-                county_votes[precinct_subunits[subunit_id]["name"]] = counts_by_candidate
-        print(county_votes)
-        if index + 1 >= limit:
-            return
+                try:
+                    counts_by_candidate[candidate_map[candidate_id]["name"]] = count
+                    county_votes[precinct_subunits[subunit_id]["name"]] = counts_by_candidate
+                except Exception as err:
+                    print(f"error while parsing data for {state_name}, subunit_id: {subunit_id}")
+        parsed_state_data[state_name] = county_votes
+        if limit is not None and index + 1 >= limit:
+            break
+    with open("output.json", "w") as out_f:
+        out_f.write(json.dumps(parsed_state_data))
 
 
 if __name__ == "__main__":
