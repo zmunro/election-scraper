@@ -1,6 +1,3 @@
-# first run this:
-#   pip install requests==2.22.0 beautifulsoup4==4.8.1
-
 import requests
 from bs4 import BeautifulSoup
 import json
