@@ -5,7 +5,7 @@ import fire
 
 
 def main(
-    state: str = None, min_votes: int = 5_000, by_state: str = "yes", candidate: str = "Joe Biden"
+    state: str = None, min_votes: int = 5_000, by_state: str = "no", candidate: str = "Joe Biden"
 ):
     candidates = set()
     with open("output.json", "r") as in_f:
@@ -34,21 +34,21 @@ def main(
         candidate_by_state.items(), key=lambda x: x[1]["percent_candidate"], reverse=True
     )
     print("state,precinct,percent_candidate,candidate_votes")
+    if by_state == "yes":
+        seen_states = set()
+        for i in candidate_by_state_sorted:
+            round_perc = round(i[1]["percent_candidate"], 3)
+            data_points = [i[0][0], i[0][1], round_perc, i[1]["candidate_votes"]]
+            state_name = i[0][0]
+            if state_name not in seen_states:
+                seen_states.add(state_name)
+                print(",".join([str(x) for x in data_points]))
+
     for i in candidate_by_state_sorted:
+        round_perc = round(i[1]["percent_candidate"], 3)
+        data_points = [i[0][0], i[0][1], round_perc, i[1]["candidate_votes"]]
         if state is None or i[0][0] == state:
-            print(
-                ",".join(
-                    [
-                        str(x)
-                        for x in [
-                            i[0][0],
-                            i[0][1],
-                            round(100 * i[1]["percent_candidate"]),
-                            i[1]["candidate_votes"],
-                        ]
-                    ]
-                )
-            )
+            print(",".join([str(x) for x in data_points]))
 
 
 if __name__ == "__main__":
